@@ -2,12 +2,17 @@ package vista;
 
 import controlador.Conexion;
 import controlador.Consultas;
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Date;
 import javax.swing.JOptionPane;
 import javax.swing.ListSelectionModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import modelo.Alumno;
 import modelo.Curso;
+import modelo.Examen;
 import modelo.VistaMatricula;
 
 public class PrincipalJFrame extends javax.swing.JFrame {
@@ -29,16 +34,15 @@ public class PrincipalJFrame extends javax.swing.JFrame {
 
         initComponents();
         initConfiguracion();
-
     }
 
     private void initConfiguracion() {
         consulta = new Consultas();
-        dtmAlumno = (DefaultTableModel) jTableTablaAlumnos.getModel();
+        dtmAlumno = (DefaultTableModel) jTableAlumnos.getModel();
         dtmCursos = (DefaultTableModel) jTableTablaCursos.getModel();
         dtmMatriculas = (DefaultTableModel) jTableMatriculas.getModel();
         dtmExamenes = (DefaultTableModel) jTableExamenes.getModel();
-        jTableTablaAlumnos.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        jTableAlumnos.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         jTableTablaCursos.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         jTableMatriculas.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         jTableExamenes.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -47,6 +51,40 @@ public class PrincipalJFrame extends javax.swing.JFrame {
         rellenarTablaDeAlumnos();
         listaCursos = consulta.obteneCursos();
         rellenarTablaDeCursos();
+        jTableAlumnos.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if (e.getValueIsAdjusting()) {
+                    String alumno = ((String) jTableAlumnos.getValueAt(jTableAlumnos.getSelectedRow(), 0));
+                    refrescarTablaDeMatriculas(consulta.obtenerVistaMatriculas(alumno));
+                }
+            }
+        });
+
+        jTableMatriculas.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if (e.getValueIsAdjusting()) {
+                    String alumno = ((String) jTableMatriculas.getValueAt(jTableMatriculas.getSelectedRow(), 0));
+                    String curso = ((String) jTableMatriculas.getValueAt(jTableMatriculas.getSelectedRow(), 2));
+                    refrescarTablaDeExamenes(consulta.obtenerExamenes(alumno, curso));
+                }
+            }
+        });
+
+        jTableExamenes.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if (e.getValueIsAdjusting()) {
+                    String fecha = ((String) jTableExamenes.getValueAt(jTableExamenes.getSelectedRow(), 1));
+                    jTextFieldFechaExamen.setText(fecha);
+                    int nota = ((Integer) jTableExamenes.getValueAt(jTableExamenes.getSelectedRow(), 2));
+                    jTextFieldNota.setText(Integer.toString(nota));
+
+                }
+            }
+        });
+
     }
 
     private void rellenarTablaDeAlumnos() {
@@ -61,9 +99,23 @@ public class PrincipalJFrame extends javax.swing.JFrame {
         }
     }
 
-    private void rellenarTablaDeMatriculas(ArrayList<VistaMatricula> vistaMatriculas) {
+    private void refrescarTablaDeMatriculas(ArrayList<VistaMatricula> vistaMatriculas) {
+        limpiarTabla(dtmMatriculas);
         for (VistaMatricula vm : vistaMatriculas) {
             dtmMatriculas.addRow(new Object[]{vm.getcCodAlu(), vm.getcNomAlu(), vm.getcCodCurso(), vm.getcNomCurso(), vm.getnNotaMedia()});
+        }
+    }
+
+    private void refrescarTablaDeExamenes(ArrayList<Examen> examenes) {
+        limpiarTabla(dtmExamenes);
+        for (Examen e : examenes) {
+            dtmExamenes.addRow(new Object[]{e.getnNumExam(), e.getdFecExam(), e.getnNotaExam()});
+        }
+    }
+
+    public static void limpiarTabla(DefaultTableModel dtm) {
+        for (int i = dtm.getRowCount() - 1; i >= 0; i--) {
+            dtm.removeRow(i);
         }
     }
 
@@ -71,9 +123,9 @@ public class PrincipalJFrame extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jScrollPanelTablaAlumnos = new javax.swing.JScrollPane();
-        jTableTablaAlumnos = new javax.swing.JTable();
-        jScrollPaneTablaCursos = new javax.swing.JScrollPane();
+        jScrollPanelAlumnos = new javax.swing.JScrollPane();
+        jTableAlumnos = new javax.swing.JTable();
+        jScrollPaneCursos = new javax.swing.JScrollPane();
         jTableTablaCursos = new javax.swing.JTable();
         jButtonMatricular = new javax.swing.JButton();
         jScrollPaneMatriculas = new javax.swing.JScrollPane();
@@ -87,13 +139,14 @@ public class PrincipalJFrame extends javax.swing.JFrame {
         jButtonActualizar = new javax.swing.JButton();
         jButtonBoletinJson = new javax.swing.JButton();
         jButtonListadoMatricula = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Gestión Academia de Indiomas");
         setMinimumSize(new java.awt.Dimension(1075, 841));
         getContentPane().setLayout(null);
 
-        jTableTablaAlumnos.setModel(new javax.swing.table.DefaultTableModel(
+        jTableAlumnos.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
 
             },
@@ -109,16 +162,16 @@ public class PrincipalJFrame extends javax.swing.JFrame {
                 return canEdit [columnIndex];
             }
         });
-        jTableTablaAlumnos.getTableHeader().setReorderingAllowed(false);
-        jScrollPanelTablaAlumnos.setViewportView(jTableTablaAlumnos);
-        jTableTablaAlumnos.getColumnModel().getSelectionModel().setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
-        if (jTableTablaAlumnos.getColumnModel().getColumnCount() > 0) {
-            jTableTablaAlumnos.getColumnModel().getColumn(0).setResizable(false);
-            jTableTablaAlumnos.getColumnModel().getColumn(1).setResizable(false);
+        jTableAlumnos.getTableHeader().setReorderingAllowed(false);
+        jScrollPanelAlumnos.setViewportView(jTableAlumnos);
+        jTableAlumnos.getColumnModel().getSelectionModel().setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        if (jTableAlumnos.getColumnModel().getColumnCount() > 0) {
+            jTableAlumnos.getColumnModel().getColumn(0).setResizable(false);
+            jTableAlumnos.getColumnModel().getColumn(1).setResizable(false);
         }
 
-        getContentPane().add(jScrollPanelTablaAlumnos);
-        jScrollPanelTablaAlumnos.setBounds(12, 33, 420, 190);
+        getContentPane().add(jScrollPanelAlumnos);
+        jScrollPanelAlumnos.setBounds(12, 33, 420, 190);
 
         jTableTablaCursos.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -137,7 +190,7 @@ public class PrincipalJFrame extends javax.swing.JFrame {
             }
         });
         jTableTablaCursos.getTableHeader().setReorderingAllowed(false);
-        jScrollPaneTablaCursos.setViewportView(jTableTablaCursos);
+        jScrollPaneCursos.setViewportView(jTableTablaCursos);
         jTableTablaCursos.getColumnModel().getSelectionModel().setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         if (jTableTablaCursos.getColumnModel().getColumnCount() > 0) {
             jTableTablaCursos.getColumnModel().getColumn(0).setResizable(false);
@@ -145,8 +198,8 @@ public class PrincipalJFrame extends javax.swing.JFrame {
             jTableTablaCursos.getColumnModel().getColumn(2).setResizable(false);
         }
 
-        getContentPane().add(jScrollPaneTablaCursos);
-        jScrollPaneTablaCursos.setBounds(462, 30, 430, 200);
+        getContentPane().add(jScrollPaneCursos);
+        jScrollPaneCursos.setBounds(462, 30, 430, 200);
 
         jButtonMatricular.setText("Martricular Alumno en Curso");
         jButtonMatricular.addActionListener(new java.awt.event.ActionListener() {
@@ -228,10 +281,20 @@ public class PrincipalJFrame extends javax.swing.JFrame {
         jTextFieldNota.setBounds(670, 580, 150, 25);
 
         jButtonActualizar.setText("Actualizar");
+        jButtonActualizar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonActualizarActionPerformed(evt);
+            }
+        });
         getContentPane().add(jButtonActualizar);
         jButtonActualizar.setBounds(680, 630, 150, 25);
 
         jButtonBoletinJson.setText("Boletín JSON");
+        jButtonBoletinJson.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonBoletinJsonActionPerformed(evt);
+            }
+        });
         getContentPane().add(jButtonBoletinJson);
         jButtonBoletinJson.setBounds(600, 680, 250, 25);
 
@@ -239,25 +302,50 @@ public class PrincipalJFrame extends javax.swing.JFrame {
         getContentPane().add(jButtonListadoMatricula);
         jButtonListadoMatricula.setBounds(610, 740, 250, 25);
 
+        jLabel1.setText("dd-mm-yyyy");
+        getContentPane().add(jLabel1);
+        jLabel1.setBounds(860, 514, 140, 30);
+
         pack();
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButtonMatricularActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonMatricularActionPerformed
-        int rowAlumno = jTableTablaAlumnos.getSelectedRow();
+        int rowAlumno = jTableAlumnos.getSelectedRow();
         int rowCurso = jTableTablaCursos.getSelectedRow();
         if (rowAlumno != -1 && rowCurso != -1) {
-            String alumno = ((String) jTableTablaAlumnos.getValueAt(rowAlumno, 0));
+            String alumno = ((String) jTableAlumnos.getValueAt(rowAlumno, 0));
             String curso = ((String) jTableTablaCursos.getValueAt(rowCurso, 0));
             int resultado = consulta.procedimientoCrearMatricula(alumno, curso);
             if (resultado != 0) {
                 JOptionPane.showMessageDialog(null, "No se pudo matricular al alumno."
                         + "\nError: " + resultado);
             } else {
-                rellenarTablaDeMatriculas(consulta.obtenerVistaMatriculas(alumno));
+                refrescarTablaDeMatriculas(consulta.obtenerVistaMatriculas(alumno));
             }
         }
     }//GEN-LAST:event_jButtonMatricularActionPerformed
+
+    private void jButtonActualizarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonActualizarActionPerformed
+        int rowExamen = jTableExamenes.getSelectedRow();
+        if (rowExamen >= 0) {
+            String alumno = (String) jTableMatriculas.getValueAt(jTableMatriculas.getSelectedRow(), 0);
+            String curso = (String) jTableMatriculas.getValueAt(jTableMatriculas.getSelectedRow(), 2);
+            int numExam = (Integer) jTableExamenes.getValueAt(rowExamen, 0);
+            String fecha = (String) jTextFieldFechaExamen.getText();
+            int nota = Integer.parseInt(jTextFieldNota.getText());
+            consulta.actualizarExamen(alumno, curso, numExam, fecha, nota);
+        }
+    }//GEN-LAST:event_jButtonActualizarActionPerformed
+
+    private void jButtonBoletinJsonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonBoletinJsonActionPerformed
+        File file = Herramientas.obtenerFileParaGuardar();
+        if (file != null && file.exists() && file.isFile() && file.canWrite()) {
+            String alumno = ((String) jTableMatriculas.getValueAt(jTableMatriculas.getSelectedRow(), 0));
+            String curso = ((String) jTableMatriculas.getValueAt(jTableMatriculas.getSelectedRow(), 2));
+            Herramientas.exportarArchivoJSON(file, consulta.obtenerExamenes(alumno, curso));
+        }
+    }//GEN-LAST:event_jButtonBoletinJsonActionPerformed
 
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
@@ -296,17 +384,19 @@ public class PrincipalJFrame extends javax.swing.JFrame {
     private javax.swing.JButton jButtonBoletinJson;
     private javax.swing.JButton jButtonListadoMatricula;
     private javax.swing.JButton jButtonMatricular;
+    private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabelFechaExamen;
     private javax.swing.JLabel jLabelNota;
+    private javax.swing.JScrollPane jScrollPaneCursos;
     private javax.swing.JScrollPane jScrollPaneExamenes;
     private javax.swing.JScrollPane jScrollPaneMatriculas;
-    private javax.swing.JScrollPane jScrollPaneTablaCursos;
-    private javax.swing.JScrollPane jScrollPanelTablaAlumnos;
+    private javax.swing.JScrollPane jScrollPanelAlumnos;
+    private javax.swing.JTable jTableAlumnos;
     private javax.swing.JTable jTableExamenes;
     private javax.swing.JTable jTableMatriculas;
-    private javax.swing.JTable jTableTablaAlumnos;
     private javax.swing.JTable jTableTablaCursos;
     private javax.swing.JTextField jTextFieldFechaExamen;
     private javax.swing.JTextField jTextFieldNota;
     // End of variables declaration//GEN-END:variables
+
 }

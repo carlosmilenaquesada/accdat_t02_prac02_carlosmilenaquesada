@@ -4,8 +4,11 @@ import modelo.Alumno;
 import modelo.Curso;
 import java.util.ArrayList;
 import java.sql.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import modelo.Examen;
 import modelo.VistaMatricula;
 
 public class Consultas {
@@ -50,7 +53,7 @@ public class Consultas {
 
     public ArrayList<VistaMatricula> obtenerVistaMatriculas(String cCodAlu) {
         ArrayList<VistaMatricula> listaMatriculas = new ArrayList<>();
-        String ins = "SELECT * FROM V_MATRICULAS WHERE cCodAlu = " + cCodAlu;
+        String ins = "SELECT * FROM V_MATRICULAS WHERE cCodAlu = '" + cCodAlu + "'";
         try {
             Statement st = Conexion.getInstance().createStatement();
             ResultSet rs = st.executeQuery(ins);
@@ -69,9 +72,29 @@ public class Consultas {
         return listaMatriculas;
     }
 
-    public ArrayList<Object> obtenerExamenes(String cCodAlu, String cCodCurso) {
-        ArrayList<Object> listaExamenes = new ArrayList<>();
+    public ArrayList<Examen> obtenerExamenes(String cCodAlu, String cCodCurso) {
+        ArrayList<Examen> listaExamenes = new ArrayList<>();
+        String ins = "SELECT * FROM EXAMENES WHERE cCodAlu = '" + cCodAlu + "' AND cCodCurso = '" + cCodCurso + "'";
 
+        try {
+            Statement st = Conexion.getInstance().createStatement();
+            ResultSet rs = st.executeQuery(ins);
+            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+            while (rs.next()) {               
+                    Examen ex = new Examen();
+
+                    ex.setcCodAlu(rs.getString("cCodAlu"));
+                    ex.setcCodCurso(rs.getString("cCodCurso"));
+                    ex.setnNumExam(rs.getInt("nNumExam"));
+                    ex.setnNotaExam(rs.getInt("nNotaExam"));
+                    if (rs.getString("dFecExam") != null) {   
+                        ex.setdFecExam(sdf.format(rs.getDate("dFecExam")));
+                    }
+                    listaExamenes.add(ex);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Consultas.class.getName()).log(Level.SEVERE, null, ex);
+        }
         return listaExamenes;
     }
 
@@ -80,7 +103,7 @@ public class Consultas {
         int codigoRetorno = 0;
         try {
             CallableStatement sentencia = Conexion.getInstance().prepareCall(ins);
-            sentencia.setString("xcCodAlu", "rosetas");
+            sentencia.setString("xcCodAlu", cCodAlu);
             sentencia.setString("xcCodCurso", cCodCurso);
             sentencia.registerOutParameter("xError", Types.NUMERIC);
             sentencia.executeUpdate();
@@ -90,6 +113,26 @@ public class Consultas {
         } finally {
             return codigoRetorno;
         }
+    }
 
+    public void actualizarExamen(String cCodAlu, String cCodCurso, int nNumExam, String dFecExam, int nNotaExam) {
+        String ins = "UPDATE EXAMENES SET dFecExam = ?, nNotaExam = ? WHERE cCodAlu = ? "
+                + "AND cCodCurso = ? AND nNumExam = ?";
+
+        try {
+            PreparedStatement ps = Conexion.getInstance().prepareStatement(ins);
+            ps.setString(1, dFecExam);
+            ps.setInt(2, nNotaExam);
+            ps.setString(3, cCodAlu);
+            ps.setString(4, cCodCurso);
+            ps.setInt(5, nNumExam);
+            String ins2 = "UPDATE EXAMENES SET dFecExam = " + dFecExam + ", nNotaExam = " + nNotaExam + " WHERE cCodAlu = " + cCodAlu + " "
+                    + "AND cCodCurso = " + cCodCurso + " AND nNumExam = " + nNumExam;
+            System.out.println(ins2);
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            System.out.println("esta");
+            Logger.getLogger(Consultas.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 }
