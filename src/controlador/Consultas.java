@@ -4,7 +4,6 @@ import modelo.Alumno;
 import modelo.Curso;
 import java.util.ArrayList;
 import java.sql.*;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -79,18 +78,17 @@ public class Consultas {
         try {
             Statement st = Conexion.getInstance().createStatement();
             ResultSet rs = st.executeQuery(ins);
-            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
-            while (rs.next()) {               
-                    Examen ex = new Examen();
-
-                    ex.setcCodAlu(rs.getString("cCodAlu"));
-                    ex.setcCodCurso(rs.getString("cCodCurso"));
-                    ex.setnNumExam(rs.getInt("nNumExam"));
-                    ex.setnNotaExam(rs.getInt("nNotaExam"));
-                    if (rs.getString("dFecExam") != null) {   
-                        ex.setdFecExam(sdf.format(rs.getDate("dFecExam")));
-                    }
-                    listaExamenes.add(ex);
+            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yy");
+            while (rs.next()) {
+                Examen ex = new Examen();
+                ex.setcCodAlu(rs.getString("cCodAlu"));
+                ex.setcCodCurso(rs.getString("cCodCurso"));
+                ex.setnNumExam(rs.getInt("nNumExam"));
+                ex.setnNotaExam(rs.getInt("nNotaExam"));
+                if (rs.getString("dFecExam") != null) {
+                    ex.setdFecExam(sdf.format(rs.getDate("dFecExam")));
+                }
+                listaExamenes.add(ex);
             }
         } catch (SQLException ex) {
             Logger.getLogger(Consultas.class.getName()).log(Level.SEVERE, null, ex);
@@ -115,10 +113,10 @@ public class Consultas {
         }
     }
 
-    public void actualizarExamen(String cCodAlu, String cCodCurso, int nNumExam, String dFecExam, int nNotaExam) {
+    public String actualizarExamen(String cCodAlu, String cCodCurso, int nNumExam, String dFecExam, int nNotaExam) {
         String ins = "UPDATE EXAMENES SET dFecExam = ?, nNotaExam = ? WHERE cCodAlu = ? "
                 + "AND cCodCurso = ? AND nNumExam = ?";
-
+        String resultado = "";
         try {
             PreparedStatement ps = Conexion.getInstance().prepareStatement(ins);
             ps.setString(1, dFecExam);
@@ -130,9 +128,12 @@ public class Consultas {
                     + "AND cCodCurso = " + cCodCurso + " AND nNumExam = " + nNumExam;
             System.out.println(ins2);
             ps.executeUpdate();
+            return resultado;
         } catch (SQLException ex) {
-            System.out.println("esta");
-            Logger.getLogger(Consultas.class.getName()).log(Level.SEVERE, null, ex);
+            resultado = "Descripción error: " + ex.getMessage()
+                    + "Código error: " + ex.getErrorCode();
+            return resultado;
         }
+
     }
 }

@@ -1,10 +1,18 @@
 package vista;
 
+import com.toedter.calendar.JTextFieldDateEditor;
 import controlador.Conexion;
 import controlador.Consultas;
 import java.io.File;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
@@ -34,6 +42,7 @@ public class PrincipalJFrame extends javax.swing.JFrame {
 
         initComponents();
         initConfiguracion();
+
     }
 
     private void initConfiguracion() {
@@ -51,6 +60,10 @@ public class PrincipalJFrame extends javax.swing.JFrame {
         rellenarTablaDeAlumnos();
         listaCursos = consulta.obteneCursos();
         rellenarTablaDeCursos();
+
+        JTextFieldDateEditor e = (JTextFieldDateEditor) jDateChooser1.getDateEditor();
+        e.setEditable(false);
+
         jTableAlumnos.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
@@ -76,8 +89,16 @@ public class PrincipalJFrame extends javax.swing.JFrame {
             @Override
             public void valueChanged(ListSelectionEvent e) {
                 if (e.getValueIsAdjusting()) {
+
                     String fecha = ((String) jTableExamenes.getValueAt(jTableExamenes.getSelectedRow(), 1));
-                    jTextFieldFechaExamen.setText(fecha);
+                    try {
+                        if (fecha != null) {
+
+                            jDateChooser1.setDate(new SimpleDateFormat("dd-MM-yy").parse(fecha));
+                        }
+                    } catch (ParseException ex) {
+                        Logger.getLogger(PrincipalJFrame.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                     int nota = ((Integer) jTableExamenes.getValueAt(jTableExamenes.getSelectedRow(), 2));
                     jTextFieldNota.setText(Integer.toString(nota));
 
@@ -134,12 +155,11 @@ public class PrincipalJFrame extends javax.swing.JFrame {
         jTableExamenes = new javax.swing.JTable();
         jLabelFechaExamen = new javax.swing.JLabel();
         jLabelNota = new javax.swing.JLabel();
-        jTextFieldFechaExamen = new javax.swing.JTextField();
         jTextFieldNota = new javax.swing.JTextField();
         jButtonActualizar = new javax.swing.JButton();
         jButtonBoletinJson = new javax.swing.JButton();
         jButtonListadoMatricula = new javax.swing.JButton();
-        jLabel1 = new javax.swing.JLabel();
+        jDateChooser1 = new com.toedter.calendar.JDateChooser();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Gestión Academia de Indiomas");
@@ -270,15 +290,13 @@ public class PrincipalJFrame extends javax.swing.JFrame {
 
         jLabelFechaExamen.setText("Fecha Examen");
         getContentPane().add(jLabelFechaExamen);
-        jLabelFechaExamen.setBounds(530, 520, 100, 25);
+        jLabelFechaExamen.setBounds(550, 600, 100, 25);
 
         jLabelNota.setText("Nota");
         getContentPane().add(jLabelNota);
-        jLabelNota.setBounds(540, 580, 100, 25);
-        getContentPane().add(jTextFieldFechaExamen);
-        jTextFieldFechaExamen.setBounds(670, 520, 150, 25);
+        jLabelNota.setBounds(540, 690, 100, 25);
         getContentPane().add(jTextFieldNota);
-        jTextFieldNota.setBounds(670, 580, 150, 25);
+        jTextFieldNota.setBounds(630, 710, 150, 25);
 
         jButtonActualizar.setText("Actualizar");
         jButtonActualizar.addActionListener(new java.awt.event.ActionListener() {
@@ -287,7 +305,7 @@ public class PrincipalJFrame extends javax.swing.JFrame {
             }
         });
         getContentPane().add(jButtonActualizar);
-        jButtonActualizar.setBounds(680, 630, 150, 25);
+        jButtonActualizar.setBounds(670, 750, 150, 25);
 
         jButtonBoletinJson.setText("Boletín JSON");
         jButtonBoletinJson.addActionListener(new java.awt.event.ActionListener() {
@@ -296,15 +314,18 @@ public class PrincipalJFrame extends javax.swing.JFrame {
             }
         });
         getContentPane().add(jButtonBoletinJson);
-        jButtonBoletinJson.setBounds(600, 680, 250, 25);
+        jButtonBoletinJson.setBounds(600, 800, 250, 25);
 
         jButtonListadoMatricula.setText("Listado Matrícula XML");
+        jButtonListadoMatricula.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonListadoMatriculaActionPerformed(evt);
+            }
+        });
         getContentPane().add(jButtonListadoMatricula);
-        jButtonListadoMatricula.setBounds(610, 740, 250, 25);
-
-        jLabel1.setText("dd-mm-yyyy");
-        getContentPane().add(jLabel1);
-        jLabel1.setBounds(860, 514, 140, 30);
+        jButtonListadoMatricula.setBounds(290, 790, 250, 25);
+        getContentPane().add(jDateChooser1);
+        jDateChooser1.setBounds(650, 600, 210, 20);
 
         pack();
         setLocationRelativeTo(null);
@@ -332,9 +353,18 @@ public class PrincipalJFrame extends javax.swing.JFrame {
             String alumno = (String) jTableMatriculas.getValueAt(jTableMatriculas.getSelectedRow(), 0);
             String curso = (String) jTableMatriculas.getValueAt(jTableMatriculas.getSelectedRow(), 2);
             int numExam = (Integer) jTableExamenes.getValueAt(rowExamen, 0);
-            String fecha = (String) jTextFieldFechaExamen.getText();
+            LocalDate fecha = LocalDate.ofInstant(jDateChooser1.getCalendar().toInstant(), ZoneId.systemDefault());
+
             int nota = Integer.parseInt(jTextFieldNota.getText());
-            consulta.actualizarExamen(alumno, curso, numExam, fecha, nota);
+            DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd-MM-yy");
+            String resultado = consulta.actualizarExamen(alumno, curso, numExam, fecha.format(formato), nota);
+            if (!resultado.isEmpty()) {
+                JOptionPane.showMessageDialog(null, "Error al completar la acción.\n" + resultado);
+            } else {
+                dtmExamenes.setValueAt(fecha, rowExamen, 1);
+                dtmExamenes.setValueAt(nota, rowExamen, 2);
+            }
+
         }
     }//GEN-LAST:event_jButtonActualizarActionPerformed
 
@@ -346,6 +376,10 @@ public class PrincipalJFrame extends javax.swing.JFrame {
             Herramientas.exportarArchivoJSON(file, consulta.obtenerExamenes(alumno, curso));
         }
     }//GEN-LAST:event_jButtonBoletinJsonActionPerformed
+
+    private void jButtonListadoMatriculaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonListadoMatriculaActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButtonListadoMatriculaActionPerformed
 
     public static void main(String args[]) {
         /* Set the Nimbus look and feel */
@@ -384,7 +418,7 @@ public class PrincipalJFrame extends javax.swing.JFrame {
     private javax.swing.JButton jButtonBoletinJson;
     private javax.swing.JButton jButtonListadoMatricula;
     private javax.swing.JButton jButtonMatricular;
-    private javax.swing.JLabel jLabel1;
+    private com.toedter.calendar.JDateChooser jDateChooser1;
     private javax.swing.JLabel jLabelFechaExamen;
     private javax.swing.JLabel jLabelNota;
     private javax.swing.JScrollPane jScrollPaneCursos;
@@ -395,7 +429,6 @@ public class PrincipalJFrame extends javax.swing.JFrame {
     private javax.swing.JTable jTableExamenes;
     private javax.swing.JTable jTableMatriculas;
     private javax.swing.JTable jTableTablaCursos;
-    private javax.swing.JTextField jTextFieldFechaExamen;
     private javax.swing.JTextField jTextFieldNota;
     // End of variables declaration//GEN-END:variables
 
