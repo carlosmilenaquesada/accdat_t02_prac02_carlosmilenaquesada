@@ -2,13 +2,13 @@ package modelo;
 
 import java.io.Serializable;
 
-public class Alumno implements Serializable{
+public class Alumno implements Serializable {
 
-    private String cCodALu;
+    private String cCodAlu;
     private String cNomAlu;
 
-    public Alumno(String cCodALu, String cNomAlu) {
-        this.cCodALu = cCodALu;
+    public Alumno(String cCodAlu, String cNomAlu) {
+        this.cCodAlu = cCodAlu;
         this.cNomAlu = cNomAlu;
     }
 
@@ -22,13 +22,13 @@ public class Alumno implements Serializable{
         }
     }
 
-    public String getcCodALu() {
-        return cCodALu;
+    public String getcCodAlu() {
+        return cCodAlu;
     }
 
-    public void setcCodALu(String cCodALu) {
-        if (cCodALu != null) {
-            this.cCodALu = cCodALu;
+    public void setcCodAlu(String cCodAlu) {
+        if (cCodAlu != null) {
+            this.cCodAlu = cCodAlu;
         }
     }
 

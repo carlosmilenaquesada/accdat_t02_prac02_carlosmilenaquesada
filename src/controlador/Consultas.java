@@ -5,6 +5,7 @@ import modelo.Curso;
 import java.util.ArrayList;
 import java.sql.*;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import modelo.Examen;
@@ -21,7 +22,7 @@ public class Consultas {
         String ins = "SELECT * FROM ALUMNOS";
         ResultSet rs;
         try {
-            Statement st = Conexion.getInstance().createStatement();
+            Statement st = Conexion.getConexion().createStatement();
             rs = st.executeQuery(ins);
 
             while (rs.next()) {
@@ -39,7 +40,7 @@ public class Consultas {
         String ins = "SELECT * FROM CURSOS";
         ResultSet rs;
         try {
-            Statement st = Conexion.getInstance().createStatement();
+            Statement st = Conexion.getConexion().createStatement();
             rs = st.executeQuery(ins);
             while (rs.next()) {
                 cursos.add(new Curso(rs.getString("cCodCurso"), rs.getString("cNomCurso"), rs.getInt("nNumExa")));
@@ -54,7 +55,7 @@ public class Consultas {
         ArrayList<VistaMatricula> listaMatriculas = new ArrayList<>();
         String ins = "SELECT * FROM V_MATRICULAS WHERE cCodAlu = '" + cCodAlu + "'";
         try {
-            Statement st = Conexion.getInstance().createStatement();
+            Statement st = Conexion.getConexion().createStatement();
             ResultSet rs = st.executeQuery(ins);
             while (rs.next()) {
                 listaMatriculas.add(new VistaMatricula(
@@ -76,7 +77,7 @@ public class Consultas {
         String ins = "SELECT * FROM EXAMENES WHERE cCodAlu = '" + cCodAlu + "' AND cCodCurso = '" + cCodCurso + "'";
 
         try {
-            Statement st = Conexion.getInstance().createStatement();
+            Statement st = Conexion.getConexion().createStatement();
             ResultSet rs = st.executeQuery(ins);
             SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yy");
             while (rs.next()) {
@@ -100,7 +101,7 @@ public class Consultas {
         String ins = "{call sp_AltaMatricula(?, ?, ?)}";
         int codigoRetorno = 0;
         try {
-            CallableStatement sentencia = Conexion.getInstance().prepareCall(ins);
+            CallableStatement sentencia = Conexion.getConexion().prepareCall(ins);
             sentencia.setString("xcCodAlu", cCodAlu);
             sentencia.setString("xcCodCurso", cCodCurso);
             sentencia.registerOutParameter("xError", Types.NUMERIC);
@@ -118,7 +119,8 @@ public class Consultas {
                 + "AND cCodCurso = ? AND nNumExam = ?";
         String resultado = "";
         try {
-            PreparedStatement ps = Conexion.getInstance().prepareStatement(ins);
+            System.out.println(dFecExam);
+            PreparedStatement ps = Conexion.getConexion().prepareStatement(ins);
             ps.setString(1, dFecExam);
             ps.setInt(2, nNotaExam);
             ps.setString(3, cCodAlu);
@@ -128,10 +130,11 @@ public class Consultas {
                     + "AND cCodCurso = " + cCodCurso + " AND nNumExam = " + nNumExam;
             System.out.println(ins2);
             ps.executeUpdate();
-            return resultado;
         } catch (SQLException ex) {
-            resultado = "Descripción error: " + ex.getMessage()
-                    + "Código error: " + ex.getErrorCode();
+            resultado =  "Ocurrió un error en la actualización."
+                    + "\nCódigo error: " + ex.getErrorCode();
+
+        } finally {
             return resultado;
         }
 
