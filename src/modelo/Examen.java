@@ -7,10 +7,10 @@ public class Examen {
     private String cCodAlu;
     private String cCodCurso;
     private int nNumExam;
-    private String dFecExam;
+    private Date dFecExam;
     private int nNotaExam;
 
-    public Examen(String cCodAlu, String cCodCurso, int nNumExam, String dFecExam, int nNotaExam) {
+    public Examen(String cCodAlu, String cCodCurso, int nNumExam, Date dFecExam, int nNotaExam) {
         this.cCodAlu = cCodAlu;
         this.cCodCurso = cCodCurso;
         this.nNumExam = nNumExam;
@@ -53,11 +53,11 @@ public class Examen {
         this.nNumExam = nNumExam;
     }
 
-    public String getdFecExam() {
+    public Date getdFecExam() {
         return dFecExam;
     }
 
-    public void setdFecExam(String dFecExam) {
+    public void setdFecExam(Date dFecExam) {
         this.dFecExam = dFecExam;
     }
 

@@ -4,16 +4,12 @@ import com.toedter.calendar.JTextFieldDateEditor;
 import controlador.Conexion;
 import controlador.Consultas;
 import java.io.File;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import javax.swing.JOptionPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
@@ -37,7 +33,6 @@ import static vista.Herramientas.obtenerFileParaGuardar;
 
 public class PrincipalJFrame extends javax.swing.JFrame {
 
-    Consultas consulta;
     DefaultTableModel dtmAlumno;
     DefaultTableModel dtmCursos;
     DefaultTableModel dtmMatriculas;
@@ -57,8 +52,7 @@ public class PrincipalJFrame extends javax.swing.JFrame {
     }
 
     private void initConfiguracion() {
-        //Inicialización de mis componentes
-        consulta = new Consultas();
+        //Inicialización de mis componentes        
         dtmAlumno = (DefaultTableModel) jTableAlumnos.getModel();
         dtmCursos = (DefaultTableModel) jTableTablaCursos.getModel();
         dtmMatriculas = (DefaultTableModel) jTableMatriculas.getModel();
@@ -68,10 +62,14 @@ public class PrincipalJFrame extends javax.swing.JFrame {
         jTableMatriculas.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         jTableExamenes.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        listaAlumnos = consulta.obtenerAlumnos();
-        rellenarTablaDeAlumnos();
-        listaCursos = consulta.obteneCursos();
-        rellenarTablaDeCursos();
+        try {
+            listaAlumnos = Consultas.obtenerAlumnos();
+            rellenarTablaDeAlumnos();
+            listaCursos = Consultas.obteneCursos();
+            rellenarTablaDeCursos();
+        } catch (SQLException ex) {
+            Logger.getLogger(PrincipalJFrame.class.getName()).log(Level.SEVERE, null, ex);
+        }
 
         //Creación y configuración de listener para las tablas
         JTextFieldDateEditor e = (JTextFieldDateEditor) jDateChooser1.getDateEditor();
@@ -82,7 +80,11 @@ public class PrincipalJFrame extends javax.swing.JFrame {
             public void valueChanged(ListSelectionEvent e) {
                 if (e.getValueIsAdjusting()) {
                     String alumno = ((String) jTableAlumnos.getValueAt(jTableAlumnos.getSelectedRow(), 0));
-                    refrescarTablaDeMatriculas(consulta.obtenerVistaMatriculas(alumno));
+                    try {
+                        refrescarTablaDeMatriculas(Consultas.obtenerVistaMatriculas(alumno));
+                    } catch (SQLException ex) {
+                        Logger.getLogger(PrincipalJFrame.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
             }
         });
@@ -93,7 +95,11 @@ public class PrincipalJFrame extends javax.swing.JFrame {
                 if (e.getValueIsAdjusting()) {
                     String alumno = ((String) jTableMatriculas.getValueAt(jTableMatriculas.getSelectedRow(), 0));
                     String curso = ((String) jTableMatriculas.getValueAt(jTableMatriculas.getSelectedRow(), 2));
-                    refrescarTablaDeExamenes(consulta.obtenerExamenes(alumno, curso));
+                    try {
+                        refrescarTablaDeExamenes(Consultas.obtenerExamenes(alumno, curso));
+                    } catch (SQLException ex) {
+                        Logger.getLogger(PrincipalJFrame.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
             }
         });
@@ -102,13 +108,9 @@ public class PrincipalJFrame extends javax.swing.JFrame {
             @Override
             public void valueChanged(ListSelectionEvent e) {
                 if (e.getValueIsAdjusting()) {
-                    String fecha = ((String) jTableExamenes.getValueAt(jTableExamenes.getSelectedRow(), 1));
-                    try {
-                        if (fecha != null) {
-                            jDateChooser1.setDate(new SimpleDateFormat("dd-MM-yy").parse(fecha));
-                        }
-                    } catch (ParseException ex) {
-                        Logger.getLogger(PrincipalJFrame.class.getName()).log(Level.SEVERE, null, ex);
+                    Date fecha = (Date) jTableExamenes.getValueAt(jTableExamenes.getSelectedRow(), 1);
+                    if (fecha != null) {
+                        jDateChooser1.setDate(fecha);
                     }
                     int nota = ((Integer) jTableExamenes.getValueAt(jTableExamenes.getSelectedRow(), 2));
                     if (nota >= 0 && nota <= 10) {
@@ -389,13 +391,16 @@ public class PrincipalJFrame extends javax.swing.JFrame {
         if (rowAlumno != -1 && rowCurso != -1) {
             String alumno = ((String) jTableAlumnos.getValueAt(rowAlumno, 0));
             String curso = ((String) jTableTablaCursos.getValueAt(rowCurso, 0));
-
-            int resultado = consulta.procedimientoCrearMatricula(alumno, curso);
-            if (resultado != 0) {
-                JOptionPane.showMessageDialog(null, "No se pudo matricular al alumno."
-                        + "\nError: " + resultado);
-            } else {
-                refrescarTablaDeMatriculas(consulta.obtenerVistaMatriculas(alumno));
+            try {
+                int resultado = Consultas.procedimientoCrearMatricula(alumno, curso);
+                if (resultado == 0) {
+                    refrescarTablaDeMatriculas(Consultas.obtenerVistaMatriculas(alumno));
+                } else {
+                    JOptionPane.showMessageDialog(null, "No se pudo matricular al alumno."
+                            + "\nError: " + resultado);
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(PrincipalJFrame.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }//GEN-LAST:event_jButtonMatricularActionPerformed
@@ -406,15 +411,14 @@ public class PrincipalJFrame extends javax.swing.JFrame {
             String alumno = (String) jTableMatriculas.getValueAt(jTableMatriculas.getSelectedRow(), 0);
             String curso = (String) jTableMatriculas.getValueAt(jTableMatriculas.getSelectedRow(), 2);
             int numExam = (Integer) jTableExamenes.getValueAt(rowExamen, 0);
-            LocalDate fecha = LocalDate.ofInstant(jDateChooser1.getCalendar().toInstant(), ZoneId.systemDefault());
             int nota = Integer.parseInt((String) jComboBox1.getSelectedItem());
-            DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd-MM-uu");
-            String resultado = consulta.actualizarExamen(alumno, curso, numExam, fecha.format(formato), nota);
-            if (!resultado.isEmpty()) {
-                JOptionPane.showMessageDialog(null, resultado);
-            } else {
-                dtmExamenes.setValueAt(fecha.format(formato), rowExamen, 1);
+            java.sql.Date fecha = new java.sql.Date(jDateChooser1.getDate().getTime());
+            try {
+                Consultas.actualizarExamen(alumno, curso, numExam, fecha, nota);
+                dtmExamenes.setValueAt(fecha, rowExamen, 1);
                 dtmExamenes.setValueAt(nota, rowExamen, 2);
+            } catch (SQLException ex) {
+                Logger.getLogger(PrincipalJFrame.class.getName()).log(Level.SEVERE, null, ex);
             }
 
         }
@@ -422,11 +426,15 @@ public class PrincipalJFrame extends javax.swing.JFrame {
 
     private void jButtonBoletinJsonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonBoletinJsonActionPerformed
         if (jTableMatriculas.getRowCount() > 0) {
-            File file = obtenerFileParaGuardar("Archivo JavaScript Object Notation JSON (*.json)", "json");
-            if (file != null && file.exists() && file.isFile() && file.canWrite()) {
-                String alumno = ((String) jTableMatriculas.getValueAt(jTableMatriculas.getSelectedRow(), 0));
-                String curso = ((String) jTableMatriculas.getValueAt(jTableMatriculas.getSelectedRow(), 2));
-                Herramientas.exportarArchivoJSON(file, consulta.obtenerExamenes(alumno, curso));
+            try {
+                File file = obtenerFileParaGuardar("Archivo JavaScript Object Notation JSON (*.json)", "json");
+                if (file != null && file.exists() && file.isFile() && file.canWrite()) {
+                    String alumno = ((String) jTableMatriculas.getValueAt(jTableMatriculas.getSelectedRow(), 0));
+                    String curso = ((String) jTableMatriculas.getValueAt(jTableMatriculas.getSelectedRow(), 2));
+                    Herramientas.exportarArchivoJSON(file, Consultas.obtenerExamenes(alumno, curso));
+                }
+            } catch (IOException | SQLException ex) {
+                Logger.getLogger(PrincipalJFrame.class.getName()).log(Level.SEVERE, null, ex);
             }
         } else {
             JOptionPane.showMessageDialog(null, "La tabla de exámenes está vacía, no hay nada que exportar."
@@ -456,6 +464,8 @@ public class PrincipalJFrame extends javax.swing.JFrame {
         } catch (IllegalArgumentException | ParserConfigurationException | TransformerException | DOMException ex) {
             JOptionPane.showMessageDialog(null, "Ocurrió un error."
                     + "\nDescripción error: " + ex.getMessage());
+        } catch (IOException | SQLException ex) {
+            Logger.getLogger(PrincipalJFrame.class.getName()).log(Level.SEVERE, null, ex);
         }
 
     }//GEN-LAST:event_jButtonListadoMatriculaActionPerformed
